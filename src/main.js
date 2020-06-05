@@ -20,7 +20,25 @@ Vue.prototype.$qs = qs
 //配置请求的根路径
 Axios.defaults.baseURL = 'http://localhost:8080/'
 Axios.defaults.headers['Content-Type'] = 'application/x-www-form-urlencoded;charset=UTF-8';
-Axios.defaults.withCredentials = true;// 允许跨域携带cookie
+//Axios.defaults.withCredentials = true;// 允许跨域携带cookie
+Axios.defaults.responseType = 'json'
+
+
+
+//为每个请求获取token,在request拦截器展示进度条
+Axios.interceptors.request.use(config =>{
+  // console.log(config)
+  //nProgress.start()
+  config.headers.Authorization = window.localStorage.getItem("token");
+  return config;
+})
+//在response隐藏进度条
+Axios.interceptors.response.use(config =>{
+  //nProgress.done()
+  return config;
+},error => {
+  console.log(error)
+})
 
 export function post(url, params) {
   return new Promise((resolve, reject) => {

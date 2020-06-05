@@ -35,10 +35,10 @@
                     placeholder="请输入密码"></el-input>
         </el-form-item>
 
-        <el-form-item prop="captcha">
-          <el-input prefix-icon="el-icon-picture-outline-round" style="width: 50%" v-model="loginForm.captcha"
+        <el-form-item prop="verCode">
+          <el-input prefix-icon="el-icon-picture-outline-round" style="width: 50%" v-model="loginForm.verCode"
                     placeholder="请输入验证码" clearable maxlength="4"></el-input>
-          <img id="verImg" src="http://localhost:8080/captcha" onclick="this.src=this.src+'?' ">
+          <img id="verImg" :src="verImg" @click="getVerImg">
         </el-form-item>
 
         <!--按钮-->
@@ -56,7 +56,7 @@
 
 <script>
 
-  import {post} from "../main";
+  import {get, post} from "../main";
 
   export default {
     data() {
@@ -64,7 +64,8 @@
         loginForm: {
           userAccount: 'admin',
           userPass: '1',
-          captcha: '',
+          verCode: '',
+          verKey:'',
         },
         loginFormRules: {
           userAccount: [
@@ -75,10 +76,11 @@
             {required: true, message: '请输入密码', trigger: 'blur'},
             {min: 1, max: 15, message: '长度在 1 到 15 个字符', trigger: 'blur'}
           ],
-          captcha: [
+          verCode: [
             {required: true, message: '请输入验证码', trigger: 'blur'}
           ]
         },
+        verImg: '',
       }
 
     },
@@ -88,24 +90,35 @@
         this.$refs.loginFormRef.resetFields();
       },
       //发起登录请求
-      login(){
+      login() {
         this.$refs.loginFormRef.validate(async valid => {
-          if(!valid) return;
-          const res=await post('auth/login',this.loginForm)
+          if (!valid) return;
+          const res = await post('auth/login', this.loginForm)
           console.log(res)
-          if (res.status!==200)return this.$message.error("登录失败");
+          if (res.status !== 200) {
+            this.$message.error(res.msg);
+            this.getVerImg();
+            return;
+          }
           this.$message.success("登录成功");
-          window.sessionStorage.setItem("token",res.data.token);
+          window.localStorage.setItem("token", res.data.token);
           await this.$router.push('/home');
-          console.log(res)
+          //console.log(res)
 
         })
+      },
+      //获取验证码
+      async getVerImg() {
+        const {data: res} = await this.$http.get('captcha')
+        this.verImg = res.data.image
+        this.loginForm.verKey = res.data.key
+        console.log(res.data)
       }
-
 
 
     },
     created() {
+      this.getVerImg();
 
     }
 
@@ -141,6 +154,7 @@
       left: 50%;
       transform: translate(-50%, -50%);
       background-color: #fff;
+
       img {
         width: 100%;
         height: 100%;
@@ -165,12 +179,19 @@
     display: flex;
     justify-content: flex-end;
   }
-  #verImg{
+
+  #verImg {
     height: 40px;
     width: 120px;
     float: right;
     border: 1px solid #DCDFE6;
     border-radius: 4px;
   }
+
+  #particles-js {
+    width: 100% !important;
+    height: 100%;
+  }
+
 
 </style>
